@@ -11,6 +11,13 @@ This project allows you to process trade data from CSV and JSON files. It provid
 
 #####2.The service will be available at http://localhost:8080.
 
+##Completed tasks
+- [x] Mandatory Requirements
+- [x] Optional Enhancements: Support for JSON
+- [ ] Optional Enhancements: Async Processing
+- [ ] Optional Enhancements: Reactive Data Streaming
+
+
 ##How to use the API
 Use the following curl request to upload a CSV file:
 ```bash
@@ -71,3 +78,24 @@ The server works only locally unless you configure it for deployment in another 
 - XML Support - currently only CSV and JSON support is implemented.
 
 - Detailed Testing - add more unit and integration tests.
+
+##Tests 
+CSV input(Missing product, Existing product, Invalid date)
+
+![CSV input.](tests/csv-input.png)
+
+CSV output
+
+![CSV output.](tests/csv-output.png)
+
+Json input(Missing product, Invalid date, Existing product)
+
+![Json input.](tests/json-input.png)
+
+Json output
+
+![Json output.](tests/json-output.png)
+
+
+
+
