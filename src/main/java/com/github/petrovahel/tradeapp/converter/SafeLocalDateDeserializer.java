@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 public class SafeLocalDateDeserializer extends JsonDeserializer<LocalDate> {
+
     @Override
     public LocalDate deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
         String date = p.getText();

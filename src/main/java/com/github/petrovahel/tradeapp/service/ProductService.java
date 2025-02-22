@@ -22,7 +22,7 @@ public class ProductService {
     private final ProductRepository productRepository;
 
 
-    @PostConstruct
+//    @PostConstruct
     public void loadProductData() {
         try (BufferedReader reader = Files.newBufferedReader(Paths.get(PATH))) {
             String line;

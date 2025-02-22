@@ -80,7 +80,7 @@ public class CsvTradeService extends AbstractTradeService {
         return null;
     }
 
-    public String convertListToCsv(List<TradeDTO> trades) {
+    private String convertListToCsv(List<TradeDTO> trades) {
         try (StringWriter stringWriter = new StringWriter();
              CSVWriter csvWriter = new CSVWriter(stringWriter,
                      ICSVWriter.DEFAULT_SEPARATOR,
@@ -88,7 +88,7 @@ public class CsvTradeService extends AbstractTradeService {
                      ICSVWriter.DEFAULT_ESCAPE_CHARACTER,
                      ICSVWriter.DEFAULT_LINE_END)) {
 
-            String[] header = {"Date", "Product Name", "Currency", "Price"};
+            String[] header = {"date", "productName", "currency", "price"};
             csvWriter.writeNext(header);
 
             for (TradeDTO trade : trades) {

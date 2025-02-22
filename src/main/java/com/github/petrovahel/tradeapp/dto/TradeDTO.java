@@ -3,7 +3,9 @@ package com.github.petrovahel.tradeapp.dto;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.github.petrovahel.tradeapp.converter.DateConverter;
+import com.github.petrovahel.tradeapp.converter.LocalDateSerializer;
 import com.github.petrovahel.tradeapp.converter.SafeLocalDateDeserializer;
 import com.opencsv.bean.CsvBindByName;
 import com.opencsv.bean.CsvCustomBindByName;
@@ -24,6 +26,7 @@ public class TradeDTO {
 
     @CsvCustomBindByName(column = "date", converter = DateConverter.class)
     @JsonDeserialize(using = SafeLocalDateDeserializer.class)
+    @JsonSerialize(using = LocalDateSerializer.class)
     private LocalDate date;
 
     @CsvBindByName(column = "currency")
@@ -44,5 +47,6 @@ public class TradeDTO {
     public void setId(int id) {
         this.id = id;
     }
+
 }
 

@@ -52,7 +52,11 @@ public class JsonTradeService extends AbstractTradeService {
         return convertListToJson(tradeList);
     }
 
-    public String convertListToJson(List<TradeDTO> trades) {
+    private String convertListToJson(List<TradeDTO> trades) {
+        if (trades == null || trades.isEmpty()) {
+            log.warn("convertListToJson received empty list!");
+            return "[]";
+        }
         try {
             return objectMapper.writeValueAsString(trades);
         } catch (Exception e) {
