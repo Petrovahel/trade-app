@@ -9,8 +9,9 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Component
@@ -23,33 +24,36 @@ public class JsonTradeService extends AbstractTradeService {
         this.objectMapper = objectMapper;
     }
 
-
     @Override
     public String processFile(MultipartFile file) {
-        List<TradeDTO> tradeList = new ArrayList<>();
         try {
-            List<TradeDTO> trades = objectMapper.readValue(file.getInputStream(), new TypeReference<>() {
-            });
+            List<TradeDTO> trades = objectMapper.readValue(file.getInputStream(), new TypeReference<>() {});
 
-            for (TradeDTO trade : trades) {
-                if (trade.getDate() == null) {
-                    log.error("Invalid date found for productId {}: Skipping entry", trade.getId());
-                    continue;
-                }
+            CompletableFuture<List<TradeDTO>> processedTrades = CompletableFuture.supplyAsync(() ->
+                    trades.parallelStream()
+                            .filter(trade -> {
+                                if (trade.getDate() == null) {
+                                    log.error("Invalid date found for productId {}: Skipping entry", trade.getId());
+                                    return false;
+                                }
+                                return true;
+                            })
+                            .peek(trade -> {
+                                String productName = super.getProductNameFromCache(trade.getId());
+                                if ("Missing Product Name".equals(productName)) {
+                                    log.error("Product name not found for productId {}: Replacing with default", trade.getId());
+                                }
+                                trade.setProductName(productName);
+                            })
+                            .collect(Collectors.toList())
+            );
 
-                String productName = super.getProductNameFromCache(trade.getId());
-                if (productName.equals("Missing Product Name")) {
-                    log.error("Product name not found for productId {}: Replacing with default", trade.getId());
-                }
-                trade.setProductName(productName);
-
-                tradeList.add(trade);
-            }
+            return processedTrades.thenApply(this::convertListToJson).join();
 
         } catch (Exception e) {
             log.error("Error processing JSON file: {}", e.getMessage());
+            throw new TradeProcessingException("Error processing JSON file", e);
         }
-        return convertListToJson(tradeList);
     }
 
     private String convertListToJson(List<TradeDTO> trades) {

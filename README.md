@@ -13,7 +13,7 @@ This project allows you to process trade data from CSV and JSON files. It provid
 
 ##Completed tasks
 - [x] Mandatory Requirements
-- [x] Optional Enhancements: Support for JSON
+- [x] Optional Enhancements: Support for JSON, XML
 - [ ] Optional Enhancements: Async Processing
 - [ ] Optional Enhancements: Reactive Data Streaming
 

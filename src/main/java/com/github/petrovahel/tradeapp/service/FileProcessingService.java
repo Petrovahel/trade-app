@@ -13,6 +13,7 @@ public class FileProcessingService {
 
     private final CsvTradeService csvTradeService;
     private final JsonTradeService jsonTradeService;
+    private final XmlTradeService xmlTradeService;
 
     public String processFile(MultipartFile file) {
         String filename = file.getOriginalFilename();
@@ -26,6 +27,8 @@ public class FileProcessingService {
             return csvTradeService.processFile(file);
         } else if (format.equals("json")) {
             return jsonTradeService.processFile(file);
+        } else if (format.equals("xml")) {
+            return xmlTradeService.processFile(file);
         }
         throw new TradeProcessingException("File type not supported " + format);
 
@@ -36,6 +39,8 @@ public class FileProcessingService {
             return "csv";
         } else if (filename.endsWith(".json")) {
             return "json";
+        } else if (filename.endsWith(".xml")) {
+            return "xml";
         } else {
             throw new TradeProcessingException("Unsupported file extension");
         }

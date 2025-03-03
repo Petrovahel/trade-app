@@ -6,8 +6,8 @@ import com.github.petrovahel.tradeapp.repository.ProductRepository;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.opencsv.ICSVWriter;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStreamReader;
@@ -20,11 +20,12 @@ import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-@Slf4j
-@Component
+@Service
+@Log4j2
 public class CsvTradeService extends AbstractTradeService {
 
     public CsvTradeService(ProductRepository productRepository) {
@@ -36,11 +37,15 @@ public class CsvTradeService extends AbstractTradeService {
         try (Reader reader = new InputStreamReader(file.getInputStream());
              CSVReader csvReader = new CSVReader(reader)) {
 
-            return convertListToCsv(StreamSupport.stream(csvReader.spliterator(), false)
-                    .skip(1)
-                    .map(this::mapToTradeDTO)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList()));
+            CompletableFuture<List<TradeDTO>> processedTrades = CompletableFuture.supplyAsync(() ->
+                    StreamSupport.stream(csvReader.spliterator(), true)
+                            .skip(1)
+                            .map(this::mapToTradeDTO)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList())
+            );
+
+            return processedTrades.thenApply(this::convertListToCsv).join();
 
         } catch (Exception e) {
             throw new TradeProcessingException("Error reading the file: " + e.getMessage(), e);
@@ -55,7 +60,6 @@ public class CsvTradeService extends AbstractTradeService {
 
         try {
             LocalDate date = LocalDate.parse(record[0].trim(), DateTimeFormatter.ofPattern("yyyyMMdd"));
-
             int id = Integer.parseInt(record[1].trim());
             String cur = record[2].trim();
             BigDecimal price = new BigDecimal(record[3].trim());
@@ -72,12 +76,10 @@ public class CsvTradeService extends AbstractTradeService {
 
             return new TradeDTO(id, date, cur, price, productName);
 
-        } catch (DateTimeParseException e) {
-            log.error("Invalid date format: " + record[0], e);
-        } catch (NumberFormatException e) {
-            log.error("Invalid number format: " + record[1], e);
+        } catch (DateTimeParseException | NumberFormatException e) {
+            log.error("Invalid data format: " + Arrays.toString(record), e);
+            return null;
         }
-        return null;
     }
 
     private String convertListToCsv(List<TradeDTO> trades) {
@@ -91,15 +93,18 @@ public class CsvTradeService extends AbstractTradeService {
             String[] header = {"date", "productName", "currency", "price"};
             csvWriter.writeNext(header);
 
-            for (TradeDTO trade : trades) {
-                String[] row = {
-                        trade.getDate().format(DateTimeFormatter.ofPattern("yyyyMMdd")),
-                        trade.getProductName(),
-                        trade.getCurrency(),
-                        trade.getPrice().toString()
-                };
-                csvWriter.writeNext(row);
-            }
+            trades.parallelStream()
+                    .forEach(trade -> {
+                        String[] row = {
+                                trade.getDate().format(DateTimeFormatter.ofPattern("yyyyMMdd")),
+                                trade.getProductName(),
+                                trade.getCurrency(),
+                                trade.getPrice().toString()
+                        };
+                        synchronized (csvWriter) {
+                            csvWriter.writeNext(row);
+                        }
+                    });
 
             return stringWriter.toString();
 
@@ -108,3 +113,5 @@ public class CsvTradeService extends AbstractTradeService {
         }
     }
 }
+
+
